@@ -1,4 +1,5 @@
 export { StatusIndicator } from "./status-indicator";
+export { PasswordGate } from "./PasswordGate";
 export { Tooltip } from "./tooltip";
 export {
   ArrowIcon,

@@ -4,6 +4,7 @@ import { Navbar } from "./components/layout/navbar";
 import { LandingPage } from "./pages/LandingPage";
 import { MorphAnalyzerPage } from "./pages/MorphAnalyzerPage";
 import { AboutPage } from "./pages/AboutPage";
+import { PasswordGate } from "./components/ui/PasswordGate";
 
 type View = "home" | "app" | "about";
 
@@ -52,7 +53,9 @@ export default function App() {
             transition: "opacity 200ms ease",
           }}
         >
-          <MorphAnalyzerPage onBack={() => navigateTo("home")} />
+          <PasswordGate>
+            <MorphAnalyzerPage onBack={() => navigateTo("home")} />
+          </PasswordGate>
         </div>
       )}
 
