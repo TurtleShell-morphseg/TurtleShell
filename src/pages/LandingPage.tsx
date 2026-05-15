@@ -17,6 +17,10 @@ export function LandingPage({ onEnter }: Props) {
             <h1 className="text-[clamp(2rem,4.5vw,3rem)] font-semibold text-foreground tracking-[-0.02em] leading-[1.1]">
               Active learning for morphological segmentation
             </h1>
+            {/* UF license, should be removed before submitting the paper*/}
+            <h2 className="mt-3 text-[clamp(0.9rem,1.4vw,1.2rem)] font-medium text-foreground/70 leading-tight">
+              Computational Linguistics Lab @ University of Floriday
+            </h2>
             <p className="mt-5 text-[15px] text-foreground/50 leading-relaxed max-w-md">
               Train CRF models in your browser. Annotate only the words the model is uncertain about. Iterate toward better accuracy.
             </p>
