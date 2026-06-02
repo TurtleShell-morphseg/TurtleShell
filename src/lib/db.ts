@@ -168,7 +168,7 @@ async function sendMessageToWorker(message: any): Promise<any> {
     w.addEventListener('message', handleMessage);
     // If this message needs a language context, ensure worker has it first
     const needsLanguage = ['IMPORT_FILES','LOAD_FILES','READ_FILE','SAVE_FILE','DELETE_FILE','CLEAR_FILES'] as const;
-    if (currentLanguage && lastSentLanguage !== currentLanguage && needsLanguage.includes(message.type)) {
+    if (currentLanguage !== undefined && lastSentLanguage !== currentLanguage && needsLanguage.includes(message.type)) {
       w.postMessage({ type: 'SET_LANGUAGE', language: currentLanguage, id });
       lastSentLanguage = currentLanguage;
     }

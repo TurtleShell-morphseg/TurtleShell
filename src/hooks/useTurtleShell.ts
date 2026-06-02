@@ -300,33 +300,47 @@ export function useTurtleshell(): UseTurtleshellReturn {
     cumulativeSelectSize.current = p.cumulativeSelectSize;
     if (p.rolesMap) setRolesMap(p.rolesMap);
 
+    // Sync language state from restored config
+    if (p.modelConfig.targetLanguage) {
+      setLanguageState(p.modelConfig.targetLanguage);
+      if (typeof window !== 'undefined') {
+        (window as any).language = p.modelConfig.targetLanguage;
+      }
+    }
+
     if (p.currentStage === "training") {
       setAutoStartTraining(true);
     }
 
-    if (p.currentStage === "annotation") {
+    // Restore results/training state for both results and annotation stages.
+    // This ensures that reloading on the results page (or during annotation)
+    // doesn't wipe the current cycle's metrics or exportable content.
+    if ((p.currentStage === "results" || p.currentStage === "annotation") && projectDB.cycleHistory.length > 0) {
+      const latest = projectDB.cycleHistory[projectDB.cycleHistory.length - 1];
+      // Only restore if the latest cycle in history matches the current iteration.
+      if (latest.iteration === p.currentIteration) {
+        const result: TrainingResult = {
+          precision: latest.precision,
+          recall: latest.recall,
+          f1: latest.f1,
+          totalWords: 0,
+          annotatedCount: latest.annotatedCount,
+          iterationNumber: latest.iteration,
+        };
+        setTrainingResult(result);
+        
+        projectDB.getCycleContent(latest.iteration).then((content) => {
+          if (content) {
+            training.restoreTrainingState(result, content);
+          }
+        });
+      }
+    }
+
+    if (p.currentStage === "results" || p.currentStage === "annotation") {
       projectDB.loadAnnotations(p.currentIteration).then((words) => {
         if (words.length > 0) {
           annotations.setAnnotationWords(words);
-        }
-      });
-    }
-
-    if (p.currentStage === "results" && projectDB.cycleHistory.length > 0) {
-      const latest = projectDB.cycleHistory[projectDB.cycleHistory.length - 1];
-      const result: TrainingResult = {
-        precision: latest.precision,
-        recall: latest.recall,
-        f1: latest.f1,
-        totalWords: 0,
-        annotatedCount: latest.annotatedCount,
-        iterationNumber: latest.iteration,
-      };
-      setTrainingResult(result);
-      
-      projectDB.getCycleContent(latest.iteration).then((content) => {
-        if (content) {
-          training.restoreTrainingState(result, content);
         }
       });
     }
@@ -349,6 +363,19 @@ export function useTurtleshell(): UseTurtleshellReturn {
       if (training.pendingCycleResult) {
         setPreviousResult(trainingResult);
         setTrainingResult(training.pendingCycleResult);
+
+        // Persist the cycle result and content immediately so it survives reloads
+        // even before the user clicks "Submit Annotations".
+        projectDB.saveCycle({
+          iteration: currentIteration,
+          precision: training.pendingCycleResult.precision,
+          recall: training.pendingCycleResult.recall,
+          f1: training.pendingCycleResult.f1,
+          annotatedCount: training.pendingCycleResult.annotatedCount,
+          incrementContent: training.incrementContent,
+          residualContent: training.residualContent,
+          evaluationContent: training.evaluationContent,
+        });
       }
     }
   }, [training.isTrainingComplete]); // eslint-disable-line react-hooks/exhaustive-deps

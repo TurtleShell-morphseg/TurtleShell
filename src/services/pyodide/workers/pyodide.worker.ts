@@ -356,7 +356,7 @@ try {
       case "RUN_CYCLE":
         try {
           if (!pyodide || initPromise) await initPyodide(id);
-          if (!workerLanguage) throw new Error("Language not set in worker (RUN_CYCLE).");
+          if (workerLanguage === undefined) throw new Error(`Language not set in worker (RUN_CYCLE). Current: "${workerLanguage}"`);
           await runCycle(msg.payload, id);
         } catch (err) {
           postWithId({ type: "CYCLE_ERROR", error: String(err) });
@@ -366,7 +366,7 @@ try {
       case "RUN_INFERENCE":
         try {
           if (!pyodide || initPromise) await initPyodide(id);
-          if (!workerLanguage) throw new Error("Language not set in worker (RUN_INFERENCE).");
+          if (workerLanguage === undefined) throw new Error(`Language not set in worker (RUN_INFERENCE). Current: "${workerLanguage}"`);
           await runInference(msg.payload, id);
         } catch (err) {
           postWithId({ type: "INFERENCE_ERROR", error: String(err) });
@@ -392,7 +392,7 @@ try {
       case "IMPORT_FILES":
         try {
           if (!pyodide || initPromise) await initPyodide(id);
-          if (!workerLanguage) throw new Error("Language not set in worker (IMPORT_FILES).");
+          if (workerLanguage === undefined) throw new Error(`Language not set in worker (IMPORT_FILES). Current: "${workerLanguage}"`);
           await importFile(msg.fileName, msg.fileContent);
           postWithId({ type: "FILES_IMPORTED" });
         } catch (err) {
