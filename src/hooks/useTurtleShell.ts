@@ -93,13 +93,19 @@ export interface UseTurtleshellReturn {
 // ── Hook ────────────────────────────────────────────────────────────────────
 
 export function useTurtleshell(): UseTurtleshellReturn {
-  const [language, setLanguageState] = useState<string>("");
+  const [language, setLanguageState] = useState<string>(() => {
+    return (typeof window !== 'undefined' ? localStorage.getItem('turtleshell_language') : '') || "";
+  });
   // Track the stage here so handleLanguageChange / setModelConfig can read it
   // without a stale closure. This ref is kept in sync with currentStage below.
   const currentStageRef = useRef<WorkflowStage>("config");
 
   const handleLanguageChange = useCallback((lang: string) => {
     setLanguageState(lang);
+    if (typeof window !== 'undefined') {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (window as any).language = lang;
+    }
     // Only push to the worker (which sets window.language and the VFS path
     // prefix) once the user has left the config stage. While they are still
     // typing the language name we must not create /data/<partial>/ dirs.
@@ -115,6 +121,10 @@ export function useTurtleshell(): UseTurtleshellReturn {
   useEffect(() => {
     if (currentStageRef.current !== "config") {
       setLanguage(language);
+    }
+    if (typeof window !== 'undefined') {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (window as any).language = language;
     }
   }, [language]);
 
@@ -292,31 +302,34 @@ export function useTurtleshell(): UseTurtleshellReturn {
     cumulativeSelectSize.current = p.cumulativeSelectSize;
     if (p.rolesMap) setRolesMap(p.rolesMap);
 
+    if (p.currentStage === "training") {
+      setAutoStartTraining(true);
+    }
+
     if (p.currentStage === "annotation") {
       projectDB.loadAnnotations(p.currentIteration).then((words) => {
         if (words.length > 0) {
           annotations.setAnnotationWords(words);
-          // TODO: restore isTrainingComplete flag from DB instead of inferring
         }
       });
     }
 
     if (p.currentStage === "results" && projectDB.cycleHistory.length > 0) {
       const latest = projectDB.cycleHistory[projectDB.cycleHistory.length - 1];
-      projectDB.getCycleContent(latest.iteration).then((content) => {
-        if (content) {
-          // Training orchestrator state isn't directly settable from outside,
-          // but the results page only needs trainingResult + cycleHistory.
-          // TODO: consider exposing a restoreCycleContent method on the orchestrator
-        }
-      });
-      setTrainingResult({
+      const result: TrainingResult = {
         precision: latest.precision,
         recall: latest.recall,
         f1: latest.f1,
         totalWords: 0,
         annotatedCount: latest.annotatedCount,
         iterationNumber: latest.iteration,
+      };
+      setTrainingResult(result);
+      
+      projectDB.getCycleContent(latest.iteration).then((content) => {
+        if (content) {
+          training.restoreTrainingState(result, content);
+        }
       });
     }
   }, [projectDB.dbReady]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -501,6 +514,12 @@ export function useTurtleshell(): UseTurtleshellReturn {
     training.resetTrainingState();
     training.resetInferenceState();
 
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('turtleshell_language');
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      delete (window as any).language;
+    }
+
     await projectDB.clearAll();
     await projectDB.initProject();
     wipeVfs().catch((err) => logger.warn(" VFS wipe failed:", err));
@@ -565,6 +584,7 @@ export function useTurtleshell(): UseTurtleshellReturn {
     handleReadSnapshot: async (snapshotJson: string) => {
       await projectDB.readSnapshot(snapshotJson);
       // Sync React language state from window.language set inside readSnapshot
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const restoredLang = (window as any).language as string | undefined;
       if (restoredLang && restoredLang !== language) {
         handleLanguageChange(restoredLang);

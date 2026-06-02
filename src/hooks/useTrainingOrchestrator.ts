@@ -63,6 +63,12 @@ export interface TrainingOrchestratorReturn {
   /** Reset all training state for a new cycle or fresh start */
   resetTrainingState: () => void;
   resetInferenceState: () => void;
+  /** Restore training state from a persisted cycle */
+  restoreTrainingState: (result: TrainingResult, content: {
+    incrementContent: string;
+    residualContent: string;
+    evaluationContent: string;
+  }) => void;
 }
 
 // ── Hook ────────────────────────────────────────────────────────────────────
@@ -267,6 +273,18 @@ export function useTrainingOrchestrator(deps: TrainingOrchestratorDeps): Trainin
     setPredictionsContent("");
   }, []);
 
+  const restoreTrainingState = useCallback((result: TrainingResult, content: {
+    incrementContent: string;
+    residualContent: string;
+    evaluationContent: string;
+  }) => {
+    setPendingCycleResult(result);
+    setIncrementContent(content.incrementContent);
+    setResidualContent(content.residualContent);
+    setEvaluationContent(content.evaluationContent);
+    setIsTrainingComplete(true);
+  }, []);
+
   return {
     trainingSteps,
     isTrainingComplete,
@@ -283,5 +301,6 @@ export function useTrainingOrchestrator(deps: TrainingOrchestratorDeps): Trainin
     startInference,
     resetTrainingState,
     resetInferenceState,
+    restoreTrainingState,
   };
 }

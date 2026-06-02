@@ -60,7 +60,7 @@ export interface AnnotationRow {
 
 
 let pyodide: Worker | undefined;
-let currentLanguage: string | undefined = undefined;
+let currentLanguage: string | undefined = typeof window !== 'undefined' ? localStorage.getItem('turtleshell_language') || undefined : undefined;
 let lastSentLanguage: string | undefined = undefined;
 let messageIdCounter = 1;
 
@@ -70,6 +70,13 @@ const pyodideListeners: Array<(ready: boolean) => void> = [];
 
 export function setPyodideWorker(worker: Worker) {
   pyodide = worker;
+  lastSentLanguage = undefined; // Reset to ensure the new worker receives SET_LANGUAGE
+  
+  // Proactively sync current language if we have one
+  if (currentLanguage) {
+    setLanguage(currentLanguage);
+  }
+
   pyodide.addEventListener("message", (event: MessageEvent) => {
     if (
       event.data &&
@@ -87,11 +94,19 @@ export function setPyodideWorker(worker: Worker) {
 export function setLanguage(language: string) {
   const norm = (language || '').trim();
   currentLanguage = norm;
+  if (typeof window !== 'undefined') {
+    localStorage.setItem('turtleshell_language', norm);
+    (window as any).language = norm;
+  }
   if (!pyodide) return;
   // Only post if language changed since last send to avoid duplicates
   if (lastSentLanguage === norm) return;
   lastSentLanguage = norm;
   (pyodide as Worker).postMessage({ type: "SET_LANGUAGE", language: norm });
+}
+
+export function getLanguage() {
+  return currentLanguage;
 }
 
 async function sendMessageToWorker(message: any): Promise<any> {

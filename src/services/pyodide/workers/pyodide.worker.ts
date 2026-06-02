@@ -356,6 +356,7 @@ try {
       case "RUN_CYCLE":
         try {
           if (!pyodide) await initPyodide(id);
+          if (!workerLanguage) throw new Error("Language not set in worker (RUN_CYCLE).");
           await runCycle(msg.payload, id);
         } catch (err) {
           postWithId({ type: "CYCLE_ERROR", error: String(err) });
@@ -365,6 +366,7 @@ try {
       case "RUN_INFERENCE":
         try {
           if (!pyodide) await initPyodide(id);
+          if (!workerLanguage) throw new Error("Language not set in worker (RUN_INFERENCE).");
           await runInference(msg.payload, id);
         } catch (err) {
           postWithId({ type: "INFERENCE_ERROR", error: String(err) });
@@ -390,6 +392,7 @@ try {
       case "IMPORT_FILES":
         try {
           if (!pyodide) await initPyodide(id);
+          if (!workerLanguage) throw new Error("Language not set in worker (IMPORT_FILES).");
           await importFile(msg.fileName, msg.fileContent);
           postWithId({ type: "FILES_IMPORTED" });
         } catch (err) {
