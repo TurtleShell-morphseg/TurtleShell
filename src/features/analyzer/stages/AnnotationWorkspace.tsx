@@ -469,7 +469,7 @@ export function AnnotationWorkspaceStage({
             className="flex items-center gap-1.5 px-4 py-2 rounded-lg border border-border/40 bg-secondary/10 font-mono text-[11px] text-muted-foreground/70 hover:text-foreground hover:bg-secondary/20 transition-all"
             title="Download all annotated words (aggregate)"
           >
-            <DownloadIcon className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
+            <DownloadIcon />
             <span>Annotations</span>
           </button>
         </div>
