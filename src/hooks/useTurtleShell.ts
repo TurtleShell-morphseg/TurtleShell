@@ -117,16 +117,19 @@ export function useTurtleshell(): UseTurtleshellReturn {
   const projectDB = useProjectDB();
   const [rolesMap, setRolesMap] = useState<Record<string, FileRole | null>>({});  
 
+  const [currentStage, setCurrentStage] = useState<WorkflowStage>("config");
+  const [completedStages, setCompletedStages] = useState<WorkflowStage[]>([]);
+
   // Sync language to worker ONLY when past the config stage.
   useEffect(() => {
-    if (currentStageRef.current !== "config") {
+    if (currentStage !== "config") {
       setLanguage(language);
     }
     if (typeof window !== 'undefined') {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (window as any).language = language;
     }
-  }, [language]);
+  }, [language, currentStage]);
 
   const { pyodideReady, pyodideLoading, pyodideError, modelRestored, runCycle, runInference, wipeVfs } =
     usePyodideWorker();
@@ -142,11 +145,6 @@ export function useTurtleshell(): UseTurtleshellReturn {
     filePath: fd.filePath ?? "",
     validationStatus: "pending",
   }));
-
-  // ── Workflow navigation ─────────────────────────────────────────────────
-
-  const [currentStage, setCurrentStage] = useState<WorkflowStage>("config");
-  const [completedStages, setCompletedStages] = useState<WorkflowStage[]>([]);
 
   const goToStage = useCallback(
   (stage: WorkflowStage) => {

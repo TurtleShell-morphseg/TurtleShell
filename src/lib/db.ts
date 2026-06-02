@@ -177,7 +177,7 @@ async function sendMessageToWorker(message: any): Promise<any> {
       w.removeEventListener('message', handleMessage);
       console.warn('[db] sendMessageToWorker TIMEOUT', { message });
       reject(new Error('Worker response timeout'));
-    }, 15000);
+    }, 60000);
   });
 }
 
