@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import type { AnnotationWord } from "../../../lib/types";
-import { ArrowIcon, UploadSmallIcon, CheckAllIcon, SnapshotIcon } from "../../../components/ui/icons";
+import { ArrowIcon, UploadSmallIcon, CheckAllIcon, SnapshotIcon, DownloadIcon } from "../../../components/ui/icons";
 
 function parseGoldFile(content: string): {
   lookup: Map<string, number[]>;
@@ -56,6 +56,7 @@ interface AnnotationWorkspaceProps {
   totalWords: number;
   currentIteration: number;
   onSnapshot: () => void;
+  onDownloadAnnotated: () => void;
 }
 
 export function AnnotationWorkspaceStage({
@@ -67,6 +68,7 @@ export function AnnotationWorkspaceStage({
   totalWords,
   currentIteration,
   onSnapshot,
+  onDownloadAnnotated,
 }: AnnotationWorkspaceProps) {
   const [focusIndex, setFocusIndex] = useState(0);
   const [showSkipConfirm, setShowSkipConfirm] = useState(false);
@@ -459,6 +461,16 @@ export function AnnotationWorkspaceStage({
           >
             <SnapshotIcon />
             <span>Snapshot</span>
+          </button>
+
+          {/* Download Aggregate */}
+          <button
+            onClick={onDownloadAnnotated}
+            className="flex items-center gap-1.5 px-4 py-2 rounded-lg border border-border/40 bg-secondary/10 font-mono text-[11px] text-muted-foreground/70 hover:text-foreground hover:bg-secondary/20 transition-all"
+            title="Download all annotated words (aggregate)"
+          >
+            <DownloadIcon className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
+            <span>Annotations</span>
           </button>
         </div>
 

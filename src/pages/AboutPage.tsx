@@ -46,18 +46,7 @@ export function AboutPage() {
             </p>
           </section>
 
-          <section className="pt-6 border-t border-border/10 flex flex-col md:flex-row items-center gap-6">
-            <div className="shrink-0">
-              <img 
-                src="" 
-                alt=""
-                className="w-20 h-20 rounded-xl object-cover border border-border/20 shadow-lg bg-secondary/20"
-                onError={(e) => {
-                  // Fallback if image not found
-                  (e.target as HTMLImageElement).style.display = 'none';
-                }}
-              />
-            </div>
+          <section className="pt-6 border-t border-border/10">
             {/* Development team section removed for anonymity */}
           </section>
         </div>
