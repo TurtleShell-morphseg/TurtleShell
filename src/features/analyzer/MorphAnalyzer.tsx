@@ -406,6 +406,7 @@ function StageRenderer({ ts }: { ts: UseTurtleshellReturn }) {
           totalWords={ts.totalAnnotationWords}
           currentIteration={ts.currentIteration}
           onSnapshot={ts.handleDownloadSnapshot}
+          onDownloadAnnotated={ts.handleDownloadAnnotated}
         />
       );
     case "results":
@@ -418,6 +419,7 @@ function StageRenderer({ ts }: { ts: UseTurtleshellReturn }) {
           onDownloadIncrement={ts.handleDownloadIncrement}
           onDownloadResidual={ts.handleDownloadResidual}
           onDownloadEvaluation={ts.handleDownloadEvaluation}
+          onDownloadAnnotated={ts.handleDownloadAnnotated}
           onAnnotate={() => ts.goToStage("annotation")}
           onNewCycle={ts.handleNewCycle}
           onStartOver={ts.handleStartOver}

@@ -46,8 +46,15 @@ fi
 # 5. Clone & Build
 if [ ! -d "temp-crfsuite/.git" ]; then  # Check for .git specifically
     echo "========================== Preparing temp-crfsuite =========================="
-    # Delete contents instead of the directory itself to avoid "Device busy"
-    find temp-crfsuite -mindepth 1 -delete
+    
+    if [ -d "temp-crfsuite" ]; then
+        echo "Directory exists. Cleaning contents..."
+        # Delete contents instead of the directory itself to avoid "Device busy"
+        find temp-crfsuite -mindepth 1 -delete
+    else
+        echo "Directory does not exist. Creating it..."
+        mkdir -p temp-crfsuite
+    fi
     
     echo "========================== Cloning python-crfsuite =========================="    
     # Run clone and capture errors
