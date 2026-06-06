@@ -1,5 +1,3 @@
-// Declare global language variable (set by UI, e.g. DatasetIngestion)
-declare const language: string;
 /**
  * useProjectDB.ts
  * Location: src/hooks/useProjectDB.ts
@@ -27,6 +25,11 @@ import {
 import { log } from "../lib/logger";
 
   const logger = log('project-db');
+
+function getGlobalLanguage(): string {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return (typeof window !== 'undefined' ? (window as any).language : '') || '';
+}
 
 /**
  * Strip characters that JSON.stringify fails to escape in all environments.
@@ -127,6 +130,7 @@ export function useProjectDB(): UseProjectDBReturn {
     if (!pyodideReady) return;
     let cancelled = false;
     async function load() {
+      const language = getGlobalLanguage();
       try {
         // Ensure the worker knows the selected language before any FS ops
         try {
@@ -212,6 +216,7 @@ export function useProjectDB(): UseProjectDBReturn {
   // ── Project metadata ───────────────────────────────────────────────────────
 
   const initProject = useCallback(async () => {
+    const language = getGlobalLanguage();
     if (!pyodideReady) {
       logger.warn("[useProjectDB] Pyodide not ready, blocking initProject");
       return;
@@ -239,6 +244,7 @@ export function useProjectDB(): UseProjectDBReturn {
   }, [pyodideReady]);
 
   const saveProjectMeta = useCallback(async (partial: Partial<ProjectState>) => {
+    const language = getGlobalLanguage();
     if (!ready.current || !pyodideReady) {
       logger.warn("[useProjectDB] Pyodide not ready, blocking saveProjectMeta");
       return;
@@ -376,6 +382,7 @@ export function useProjectDB(): UseProjectDBReturn {
       await db.readSnapshot(snapshotJson);
       // Reload all files and project state from the restored VFS
       await loadFiles();
+      const language = getGlobalLanguage();
       const projectResult = await db.readFile(`/data/${language}/project.json`);
       if (projectResult.fileContent) {
         try {
@@ -455,6 +462,7 @@ export function useProjectDB(): UseProjectDBReturn {
     residualContent: string;
     evaluationContent: string;
   }) => {
+    const language = getGlobalLanguage();
     if (!pyodideReady) {
       logger.warn("[useProjectDB] Pyodide not ready, blocking saveCycle");
       return;
@@ -505,6 +513,7 @@ export function useProjectDB(): UseProjectDBReturn {
   }, [pyodideReady]);
 
   const getCycleContent = useCallback(async (cycleNumber: number) => {
+    const language = getGlobalLanguage();
     if (!pyodideReady) {
       logger.warn("[useProjectDB] Pyodide not ready, blocking getCycleContent");
       return null;
@@ -531,6 +540,7 @@ export function useProjectDB(): UseProjectDBReturn {
     cycleNumber: number,
     words: AnnotationWord[]
   ) => {
+    const language = getGlobalLanguage();
     if (!pyodideReady) {
       logger.warn("[useProjectDB] Pyodide not ready, blocking saveAnnotationWords");
       return;
@@ -562,6 +572,7 @@ export function useProjectDB(): UseProjectDBReturn {
     wordId: string,
     boundaries: MorphemeBoundary[]
   ) => {
+    const language = getGlobalLanguage();
     if (!pyodideReady) {
       logger.warn("[useProjectDB] Pyodide not ready, blocking confirmAnnotation");
       return;
@@ -581,6 +592,7 @@ export function useProjectDB(): UseProjectDBReturn {
   }, [pyodideReady]);
 
   const loadAnnotations = useCallback(async (cycleNumber: number): Promise<AnnotationWord[]> => {
+    const language = getGlobalLanguage();
     if (!pyodideReady) {
       logger.warn("[useProjectDB] Pyodide not ready, blocking loadAnnotations");
       return [];
@@ -602,6 +614,7 @@ export function useProjectDB(): UseProjectDBReturn {
   }, [pyodideReady]);
 
   const getConfirmedCount = useCallback(async (cycleNumber: number): Promise<number> => {
+    const language = getGlobalLanguage();
     if (!pyodideReady) {
       logger.warn("[useProjectDB] Pyodide not ready, blocking getConfirmedCount");
       return 0;
@@ -619,6 +632,7 @@ export function useProjectDB(): UseProjectDBReturn {
   // ── Cleanup ────────────────────────────────────────────────────────────────
 
   const clearAll = useCallback(async () => {
+    const language = getGlobalLanguage();
     if (!pyodideReady) {
       logger.warn("[useProjectDB] Pyodide not ready, blocking clearAll");
       return;

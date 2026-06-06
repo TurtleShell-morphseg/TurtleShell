@@ -45,10 +45,6 @@ export function AboutPage() {
               or sensitive linguistic materials.
             </p>
           </section>
-
-          <section className="pt-6 border-t border-border/10">
-            {/* Development team section removed for anonymity */}
-          </section>
         </div>
       </div>
 

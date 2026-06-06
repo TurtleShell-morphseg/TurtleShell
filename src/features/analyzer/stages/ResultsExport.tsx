@@ -94,10 +94,17 @@ export function ResultsExportStage({
     ? { f1: result.f1, precision: result.precision, recall: result.recall, annotatedCount: result.annotatedCount, iteration: result.iterationNumber }
     : cycleHistory[selectedCycleIndex!];
 
-  // Fix: Deltas should always compare to the actual previous cycle
+  // Fix: Deltas should always compare to the actual previous cycle.
+  // If the current result is already in cycleHistory (e.g. after a reload),
+  // we must compare with the second-to-last item.
   let prevCycle: typeof viewedCycle | null = null;
   if (isViewingCurrent && cycleHistory.length > 0) {
-    prevCycle = cycleHistory[cycleHistory.length - 1];
+    const lastInHistory = cycleHistory[cycleHistory.length - 1];
+    if (lastInHistory.iteration === result.iterationNumber) {
+      prevCycle = cycleHistory.length > 1 ? cycleHistory[cycleHistory.length - 2] : null;
+    } else {
+      prevCycle = lastInHistory;
+    }
   } else if (!isViewingCurrent && selectedCycleIndex! > 0) {
     prevCycle = cycleHistory[selectedCycleIndex! - 1];
   }

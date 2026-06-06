@@ -177,7 +177,7 @@ exec(open('/tmp/run.py').read())
 // ── Training cycle ──────────────────────────────────────────────────────────
 
 async function runCycle(config: TrainingCycleConfig, id: number): Promise<void> {
-  if (!pyodide) await initPyodide(id);
+  if (!pyodide || initPromise) await initPyodide(id);
   const effectiveConfig = { ...config, workDir: DEFAULT_WORK_DIR };
 
   step("init", id);
@@ -257,7 +257,7 @@ async function runCycle(config: TrainingCycleConfig, id: number): Promise<void> 
 }
 
 async function runInference(config: { residualTgt: string; delta?: number; workDir?: string }, id: number): Promise<void> {
-  if (!pyodide) await initPyodide(id);
+  if (!pyodide || initPromise) await initPyodide(id);
   const effectiveConfig = { ...config, workDir: DEFAULT_WORK_DIR };
 
   pyodide.globals.set("_inference_config_json", JSON.stringify(effectiveConfig));
@@ -355,7 +355,8 @@ try {
 
       case "RUN_CYCLE":
         try {
-          if (!pyodide) await initPyodide(id);
+          if (!pyodide || initPromise) await initPyodide(id);
+          if (workerLanguage === undefined) throw new Error(`Language not set in worker (RUN_CYCLE). Current: "${workerLanguage}"`);
           await runCycle(msg.payload, id);
         } catch (err) {
           postWithId({ type: "CYCLE_ERROR", error: String(err) });
@@ -364,7 +365,8 @@ try {
 
       case "RUN_INFERENCE":
         try {
-          if (!pyodide) await initPyodide(id);
+          if (!pyodide || initPromise) await initPyodide(id);
+          if (workerLanguage === undefined) throw new Error(`Language not set in worker (RUN_INFERENCE). Current: "${workerLanguage}"`);
           await runInference(msg.payload, id);
         } catch (err) {
           postWithId({ type: "INFERENCE_ERROR", error: String(err) });
@@ -389,7 +391,8 @@ try {
         break;
       case "IMPORT_FILES":
         try {
-          if (!pyodide) await initPyodide(id);
+          if (!pyodide || initPromise) await initPyodide(id);
+          if (workerLanguage === undefined) throw new Error(`Language not set in worker (IMPORT_FILES). Current: "${workerLanguage}"`);
           await importFile(msg.fileName, msg.fileContent);
           postWithId({ type: "FILES_IMPORTED" });
         } catch (err) {
@@ -398,8 +401,11 @@ try {
         break;
       case "LOAD_FILES":
         try {
-          if (!pyodide) await initPyodide(id);
-          if (!workerLanguage) throw new Error("Language not set in worker. Please send SET_LANGUAGE first.");
+          if (!pyodide || initPromise) await initPyodide(id);
+          if (!workerLanguage) {
+            postWithId({ type: "FILES_LOADED", payload: [] });
+            break;
+          }
           const files = await loadFiles();
           postWithId({ type: "FILES_LOADED", payload: files });
         } catch (err) {
@@ -408,7 +414,7 @@ try {
         break;
       case "READ_FILE":
         try {
-          if (!pyodide) await initPyodide(id);
+          if (!pyodide || initPromise) await initPyodide(id);
           const { fileType, fileContent } = await readFile(msg.filePath);
           postWithId({ type: "FILE_READ", payload: { filePath: msg.filePath, fileType, fileContent } });
         } catch (err) {
@@ -418,7 +424,7 @@ try {
         break;
       case "DELETE_FILE":
         try {
-          if (!pyodide) await initPyodide(id);
+          if (!pyodide || initPromise) await initPyodide(id);
           await deleteFile(msg.filePath);
           postWithId({ type: "FILE_DELETED", filePath: msg.filePath });
         } catch (err) {
@@ -428,7 +434,7 @@ try {
         break;
       case "SAVE_FILE":
         try {
-          if (!pyodide) await initPyodide(id);
+          if (!pyodide || initPromise) await initPyodide(id);
           await saveFile(msg.filePath, msg.fileContent);
           postWithId({ type: "FILE_SAVED", filePath: msg.filePath });
         } catch (err) {
@@ -438,7 +444,7 @@ try {
         break;
       case "CLEAR_FILES":
         try {
-          if (!pyodide) await initPyodide(id);
+          if (!pyodide || initPromise) await initPyodide(id);
           await clearFiles(msg.directory);
           postWithId({ type: "FILES_CLEARED", directory: msg.directory });
         } catch (err) {
@@ -447,7 +453,7 @@ try {
         break;
       case "DOWNLOAD_SNAPSHOT":
         try {
-          if (!pyodide) await initPyodide(id);
+          if (!pyodide || initPromise) await initPyodide(id);
           const snapshotData = await downloadSnapshot();
           postWithId({ type: "SNAPSHOT_DOWNLOADED", payload: snapshotData });
         } catch (err) {
@@ -457,7 +463,7 @@ try {
         break;
       case "READ_SNAPSHOT":
         try {
-          if (!pyodide) await initPyodide(id);
+          if (!pyodide || initPromise) await initPyodide(id);
           await readSnapshot(msg.snapshotJson);
           postWithId({ type: "SNAPSHOT_READ", payload: null });
         } catch (err) {
