@@ -24,7 +24,7 @@ jobs:
           python-version: '3.12' # Must match Pyodide's Python version
 
       - name: Setup Emscripten
-        uses: mymindstorm/setup-emsdk@v14
+        uses: mymindstorm/setup-emsdk@v15
         with:
           version: 3.1.58
 
