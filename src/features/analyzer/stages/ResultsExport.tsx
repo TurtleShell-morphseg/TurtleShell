@@ -26,6 +26,7 @@ interface ResultsExportProps {
   onDownloadIncrement: () => void;
   onDownloadResidual: () => void;
   onDownloadEvaluation: () => void;
+  onDownloadAnnotated: () => void;
   onAnnotate: () => void;
   onNewCycle: () => void;
   onStartOver: () => void;
@@ -44,6 +45,7 @@ export function ResultsExportStage({
   onDownloadIncrement,
   onDownloadResidual,
   onDownloadEvaluation,
+  onDownloadAnnotated,
   onAnnotate,
   onNewCycle,
   onStartOver,
@@ -59,6 +61,8 @@ export function ResultsExportStage({
         return "Remaining unannotated data the model has not yet been asked to label.";
       case "Evaluation":
         return "Per-word predictions with confidence scores from the evaluation set.";
+      case "Annotated":
+        return "All words annotated across all cycles, used for training the current model.";
       default:
         return "";
     }
@@ -316,6 +320,7 @@ export function ResultsExportStage({
             Export
           </span>
           <div className="flex gap-2">
+            <ExportChip label="Annotated" tip={getTooltip("Annotated")} onClick={onDownloadAnnotated} />
             <ExportChip label="Increment" tip={getTooltip("Increment")} onClick={onDownloadIncrement} />
             <ExportChip label="Residual" tip={getTooltip("Residual")} onClick={onDownloadResidual} />
             <ExportChip label="Evaluation" tip={getTooltip("Evaluation")} onClick={onDownloadEvaluation} />

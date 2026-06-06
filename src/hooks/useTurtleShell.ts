@@ -77,6 +77,7 @@ export interface UseTurtleshellReturn {
   handleDownloadIncrement: () => void;
   handleDownloadResidual: () => void;
   handleDownloadEvaluation: () => void;
+  handleDownloadAnnotated: () => void;
   handleNewCycle: () => void;
   handleStartOver: () => Promise<void>;
   handleDownloadSnapshot: () => Promise<void>;
@@ -494,6 +495,27 @@ export function useTurtleshell(): UseTurtleshellReturn {
     triggerDownload(training.evaluationContent, `evaluation_cycle${currentIteration}.txt`);
   }, [training.evaluationContent, currentIteration]);
 
+  const handleDownloadAnnotated = useCallback(() => {
+    // 1. Get existing annotated content if any
+    const annotatedFile = getFileByRole(files, "annotated");
+    let baseContent = (annotatedFile?.fileContent || "").trim();
+
+    // 2. Collect current cycle's confirmed annotations if we are in annotation stage
+    let finalContent = baseContent;
+    if (currentStage === "annotation") {
+      const confirmedWords = annotations.annotationWords.filter((w) => w.confirmed);
+      if (confirmedWords.length > 0) {
+        const newTgtLines = confirmedWords.map(annotationToTgtLine).join("\n");
+        finalContent = finalContent ? finalContent + "\n" + newTgtLines : newTgtLines;
+      }
+    }
+
+    // 3. Trigger download if we have anything
+    if (finalContent) {
+      triggerDownload(finalContent, `annotated_aggregate_cycle${currentIteration}.tgt`);
+    }
+  }, [files, currentIteration, currentStage, annotations.annotationWords]);
+
   const handleDownloadPredictions = useCallback(() => {
     triggerDownload(training.predictionsContent, `predictions_cycle${currentIteration}.tgt`);
   }, [training.predictionsContent, currentIteration]);
@@ -603,6 +625,7 @@ export function useTurtleshell(): UseTurtleshellReturn {
     handleDownloadIncrement,
     handleDownloadResidual,
     handleDownloadEvaluation,
+    handleDownloadAnnotated,
     handleNewCycle,
     handleStartOver,
     handleDownloadSnapshot: projectDB.downloadSnapshot,
