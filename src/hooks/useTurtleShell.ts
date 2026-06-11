@@ -77,6 +77,7 @@ export interface UseTurtleshellReturn {
   handleDownloadIncrement: () => void;
   handleDownloadResidual: () => void;
   handleDownloadEvaluation: () => void;
+  handleDownloadAnnotated: () => void;
   handleNewCycle: () => void;
   handleStartOver: () => Promise<void>;
   handleDownloadSnapshot: () => Promise<void>;
@@ -93,13 +94,19 @@ export interface UseTurtleshellReturn {
 // ── Hook ────────────────────────────────────────────────────────────────────
 
 export function useTurtleshell(): UseTurtleshellReturn {
-  const [language, setLanguageState] = useState<string>("");
+  const [language, setLanguageState] = useState<string>(() => {
+    return (typeof window !== 'undefined' ? localStorage.getItem('turtleshell_language') : '') || "";
+  });
   // Track the stage here so handleLanguageChange / setModelConfig can read it
   // without a stale closure. This ref is kept in sync with currentStage below.
   const currentStageRef = useRef<WorkflowStage>("config");
 
   const handleLanguageChange = useCallback((lang: string) => {
     setLanguageState(lang);
+    if (typeof window !== 'undefined') {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (window as any).language = lang;
+    }
     // Only push to the worker (which sets window.language and the VFS path
     // prefix) once the user has left the config stage. While they are still
     // typing the language name we must not create /data/<partial>/ dirs.
@@ -111,12 +118,19 @@ export function useTurtleshell(): UseTurtleshellReturn {
   const projectDB = useProjectDB();
   const [rolesMap, setRolesMap] = useState<Record<string, FileRole | null>>({});  
 
+  const [currentStage, setCurrentStage] = useState<WorkflowStage>("config");
+  const [completedStages, setCompletedStages] = useState<WorkflowStage[]>([]);
+
   // Sync language to worker ONLY when past the config stage.
   useEffect(() => {
-    if (currentStageRef.current !== "config") {
+    if (currentStage !== "config") {
       setLanguage(language);
     }
-  }, [language]);
+    if (typeof window !== 'undefined') {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (window as any).language = language;
+    }
+  }, [language, currentStage]);
 
   const { pyodideReady, pyodideLoading, pyodideError, modelRestored, runCycle, runInference, wipeVfs } =
     usePyodideWorker();
@@ -132,11 +146,6 @@ export function useTurtleshell(): UseTurtleshellReturn {
     filePath: fd.filePath ?? "",
     validationStatus: "pending",
   }));
-
-  // ── Workflow navigation ─────────────────────────────────────────────────
-
-  const [currentStage, setCurrentStage] = useState<WorkflowStage>("config");
-  const [completedStages, setCompletedStages] = useState<WorkflowStage[]>([]);
 
   const goToStage = useCallback(
   (stage: WorkflowStage) => {
@@ -292,31 +301,48 @@ export function useTurtleshell(): UseTurtleshellReturn {
     cumulativeSelectSize.current = p.cumulativeSelectSize;
     if (p.rolesMap) setRolesMap(p.rolesMap);
 
-    if (p.currentStage === "annotation") {
+    // Sync language state from restored config
+    if (p.modelConfig.targetLanguage) {
+      setLanguageState(p.modelConfig.targetLanguage);
+      if (typeof window !== 'undefined') {
+        (window as any).language = p.modelConfig.targetLanguage;
+      }
+    }
+
+    if (p.currentStage === "training") {
+      setAutoStartTraining(true);
+    }
+
+    // Restore results/training state for both results and annotation stages.
+    // This ensures that reloading on the results page (or during annotation)
+    // doesn't wipe the current cycle's metrics or exportable content.
+    if ((p.currentStage === "results" || p.currentStage === "annotation") && projectDB.cycleHistory.length > 0) {
+      const latest = projectDB.cycleHistory[projectDB.cycleHistory.length - 1];
+      // Only restore if the latest cycle in history matches the current iteration.
+      if (latest.iteration === p.currentIteration) {
+        const result: TrainingResult = {
+          precision: latest.precision,
+          recall: latest.recall,
+          f1: latest.f1,
+          totalWords: 0,
+          annotatedCount: latest.annotatedCount,
+          iterationNumber: latest.iteration,
+        };
+        setTrainingResult(result);
+        
+        projectDB.getCycleContent(latest.iteration).then((content) => {
+          if (content) {
+            training.restoreTrainingState(result, content);
+          }
+        });
+      }
+    }
+
+    if (p.currentStage === "results" || p.currentStage === "annotation") {
       projectDB.loadAnnotations(p.currentIteration).then((words) => {
         if (words.length > 0) {
           annotations.setAnnotationWords(words);
-          // TODO: restore isTrainingComplete flag from DB instead of inferring
         }
-      });
-    }
-
-    if (p.currentStage === "results" && projectDB.cycleHistory.length > 0) {
-      const latest = projectDB.cycleHistory[projectDB.cycleHistory.length - 1];
-      projectDB.getCycleContent(latest.iteration).then((content) => {
-        if (content) {
-          // Training orchestrator state isn't directly settable from outside,
-          // but the results page only needs trainingResult + cycleHistory.
-          // TODO: consider exposing a restoreCycleContent method on the orchestrator
-        }
-      });
-      setTrainingResult({
-        precision: latest.precision,
-        recall: latest.recall,
-        f1: latest.f1,
-        totalWords: 0,
-        annotatedCount: latest.annotatedCount,
-        iterationNumber: latest.iteration,
       });
     }
   }, [projectDB.dbReady]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -338,6 +364,19 @@ export function useTurtleshell(): UseTurtleshellReturn {
       if (training.pendingCycleResult) {
         setPreviousResult(trainingResult);
         setTrainingResult(training.pendingCycleResult);
+
+        // Persist the cycle result and content immediately so it survives reloads
+        // even before the user clicks "Submit Annotations".
+        projectDB.saveCycle({
+          iteration: currentIteration,
+          precision: training.pendingCycleResult.precision,
+          recall: training.pendingCycleResult.recall,
+          f1: training.pendingCycleResult.f1,
+          annotatedCount: training.pendingCycleResult.annotatedCount,
+          incrementContent: training.incrementContent,
+          residualContent: training.residualContent,
+          evaluationContent: training.evaluationContent,
+        });
       }
     }
   }, [training.isTrainingComplete]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -456,6 +495,27 @@ export function useTurtleshell(): UseTurtleshellReturn {
     triggerDownload(training.evaluationContent, `evaluation_cycle${currentIteration}.txt`);
   }, [training.evaluationContent, currentIteration]);
 
+  const handleDownloadAnnotated = useCallback(() => {
+    // 1. Get existing annotated content if any
+    const annotatedFile = getFileByRole(files, "annotated");
+    let baseContent = (annotatedFile?.fileContent || "").trim();
+
+    // 2. Collect current cycle's confirmed annotations if we are in annotation stage
+    let finalContent = baseContent;
+    if (currentStage === "annotation") {
+      const confirmedWords = annotations.annotationWords.filter((w) => w.confirmed);
+      if (confirmedWords.length > 0) {
+        const newTgtLines = confirmedWords.map(annotationToTgtLine).join("\n");
+        finalContent = finalContent ? finalContent + "\n" + newTgtLines : newTgtLines;
+      }
+    }
+
+    // 3. Trigger download if we have anything
+    if (finalContent) {
+      triggerDownload(finalContent, `annotated_aggregate_cycle${currentIteration}.tgt`);
+    }
+  }, [files, currentIteration, currentStage, annotations.annotationWords]);
+
   const handleDownloadPredictions = useCallback(() => {
     triggerDownload(training.predictionsContent, `predictions_cycle${currentIteration}.tgt`);
   }, [training.predictionsContent, currentIteration]);
@@ -500,6 +560,12 @@ export function useTurtleshell(): UseTurtleshellReturn {
     annotations.resetAnnotations();
     training.resetTrainingState();
     training.resetInferenceState();
+
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('turtleshell_language');
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      delete (window as any).language;
+    }
 
     await projectDB.clearAll();
     await projectDB.initProject();
@@ -559,12 +625,14 @@ export function useTurtleshell(): UseTurtleshellReturn {
     handleDownloadIncrement,
     handleDownloadResidual,
     handleDownloadEvaluation,
+    handleDownloadAnnotated,
     handleNewCycle,
     handleStartOver,
     handleDownloadSnapshot: projectDB.downloadSnapshot,
     handleReadSnapshot: async (snapshotJson: string) => {
       await projectDB.readSnapshot(snapshotJson);
       // Sync React language state from window.language set inside readSnapshot
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const restoredLang = (window as any).language as string | undefined;
       if (restoredLang && restoredLang !== language) {
         handleLanguageChange(restoredLang);

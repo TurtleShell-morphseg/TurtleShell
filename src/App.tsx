@@ -22,6 +22,7 @@ export default function App() {
     timeoutRef.current = setTimeout(() => {
       setView(next);
       setFading(false);
+      window.scrollTo(0, 0); // Reset scroll to top on navigation
     }, 200);
   };
 

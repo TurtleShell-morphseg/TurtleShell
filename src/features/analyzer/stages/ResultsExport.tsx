@@ -26,6 +26,7 @@ interface ResultsExportProps {
   onDownloadIncrement: () => void;
   onDownloadResidual: () => void;
   onDownloadEvaluation: () => void;
+  onDownloadAnnotated: () => void;
   onAnnotate: () => void;
   onNewCycle: () => void;
   onStartOver: () => void;
@@ -44,6 +45,7 @@ export function ResultsExportStage({
   onDownloadIncrement,
   onDownloadResidual,
   onDownloadEvaluation,
+  onDownloadAnnotated,
   onAnnotate,
   onNewCycle,
   onStartOver,
@@ -59,6 +61,8 @@ export function ResultsExportStage({
         return "Remaining unannotated data the model has not yet been asked to label.";
       case "Evaluation":
         return "Per-word predictions with confidence scores from the evaluation set.";
+      case "Annotated":
+        return "All words annotated across all cycles, used for training the current model.";
       default:
         return "";
     }
@@ -90,10 +94,17 @@ export function ResultsExportStage({
     ? { f1: result.f1, precision: result.precision, recall: result.recall, annotatedCount: result.annotatedCount, iteration: result.iterationNumber }
     : cycleHistory[selectedCycleIndex!];
 
-  // Fix: Deltas should always compare to the actual previous cycle
+  // Fix: Deltas should always compare to the actual previous cycle.
+  // If the current result is already in cycleHistory (e.g. after a reload),
+  // we must compare with the second-to-last item.
   let prevCycle: typeof viewedCycle | null = null;
   if (isViewingCurrent && cycleHistory.length > 0) {
-    prevCycle = cycleHistory[cycleHistory.length - 1];
+    const lastInHistory = cycleHistory[cycleHistory.length - 1];
+    if (lastInHistory.iteration === result.iterationNumber) {
+      prevCycle = cycleHistory.length > 1 ? cycleHistory[cycleHistory.length - 2] : null;
+    } else {
+      prevCycle = lastInHistory;
+    }
   } else if (!isViewingCurrent && selectedCycleIndex! > 0) {
     prevCycle = cycleHistory[selectedCycleIndex! - 1];
   }
@@ -309,6 +320,7 @@ export function ResultsExportStage({
             Export
           </span>
           <div className="flex gap-2">
+            <ExportChip label="Annotated" tip={getTooltip("Annotated")} onClick={onDownloadAnnotated} />
             <ExportChip label="Increment" tip={getTooltip("Increment")} onClick={onDownloadIncrement} />
             <ExportChip label="Residual" tip={getTooltip("Residual")} onClick={onDownloadResidual} />
             <ExportChip label="Evaluation" tip={getTooltip("Evaluation")} onClick={onDownloadEvaluation} />
