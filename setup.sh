@@ -59,6 +59,7 @@ if [ ! -d "temp-crfsuite/.git" ]; then  # Check for .git specifically
 fi
 
 # 6. Build Custom Wheel
+export PYODIDE_CROSS_BUILD_ENV_METADATA_URL="https://pyodide.github.io/pyodide/api/pyodide-cross-build-environments.json"
 WHEEL_PATH="./public/wheels"
 # Look for a specific filename or just clear it to be sure
 echo "========================== Checking for Custom Wheel =========================="

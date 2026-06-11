@@ -41,7 +41,7 @@ let pyodide: any = null;
 let initPromise: Promise<void> | null = null;
 let workerLanguage: string | undefined = undefined;
 
-const PYODIDE_CDN = "https://cdn.jsdelivr.net/pyodide/v0.27.4/full/";
+const PYODIDE_CDN = "https://cdn.jsdelivr.net/pyodide/v0.27.3/full/";
 const CRFSUITE_WHL = `${self.location.origin}/TurtleShell/wheels/python_crfsuite-0.9.12-cp312-cp312-pyodide_2024_0_wasm32.whl`;
 const DATA_ROOT = "/data";
 let DEFAULT_WORK_DIR = DATA_ROOT;
