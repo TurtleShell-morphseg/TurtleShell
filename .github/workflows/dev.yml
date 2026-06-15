@@ -16,17 +16,19 @@ jobs:
     runs-on: ubuntu-latest
     env:
       CRFSUITE_VERSION: '0.9.12'
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+      PYODIDE_CROSS_BUILD_ENV_METADATA_URL: 'https://raw.githubusercontent.com/pyodide/pyodide/v0.27.3/pyodide-cross-build-environments.json'
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.12' # Must match Pyodide's Python version
 
       - name: Setup Emscripten
-        uses: mymindstorm/setup-emsdk@v14
+        uses: mymindstorm/setup-emsdk@v15
         with:
           version: 3.1.58
 
@@ -37,7 +39,7 @@ jobs:
       # Custom wheel is cached, so it doesn't build for every CI.
       - name: Cache Pyodide Wheel
         id: cache-wheel
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: public/wheels/python_crfsuite*.whl
           # hashFiles to auto-update if the compiler tools or CRFSUITE_VERSION changes.
@@ -66,7 +68,7 @@ jobs:
 
       - name: Cache Playwright Browsers
         id: cache-playwright
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/.cache/ms-playwright
           key: ${{ runner.os }}-playwright-${{ hashFiles('requirements-dev.txt') }}
@@ -77,7 +79,7 @@ jobs:
 
       - name: Cache Pyodide Assets
         id: cache-pyodide
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: pyodide
           key: ${{ runner.os }}-pyodide-0.27.3
