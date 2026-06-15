@@ -18,3 +18,4 @@ services:
 
     environment:
       - CHOKIDAR_USEPOLLING=true
+      - PYODIDE_CROSS_BUILD_ENV_METADATA_URL=https://pyodide.github.io/pyodide/api/pyodide-cross-build-environments.json

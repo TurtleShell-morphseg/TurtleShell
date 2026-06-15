@@ -16,8 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       CRFSUITE_VERSION: '0.9.12'
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-      PYODIDE_CROSS_BUILD_ENV_METADATA_URL: 'https://raw.githubusercontent.com/pyodide/pyodide/v0.27.3/pyodide-cross-build-environments.json'
+      PYODIDE_CROSS_BUILD_ENV_METADATA_URL: 'https://pyodide.github.io/pyodide/api/pyodide-cross-build-environments.json'
     steps:
       - name: Checkout
         uses: actions/checkout@v5
