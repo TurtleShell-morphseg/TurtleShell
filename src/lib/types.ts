@@ -62,7 +62,7 @@ export interface ModelConfig {
 }
 
 export const DEFAULT_MODEL_CONFIG: ModelConfig = {
-  incrementSize: 100,
+  incrementSize: 50,
   randomSeed: null,
   queryStrategy: "uncertainty",
   targetLanguage: "English",

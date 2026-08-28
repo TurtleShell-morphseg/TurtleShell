@@ -7,6 +7,7 @@ interface TrainingProgressProps {
   currentIteration: number;
   isComplete: boolean;
   onContinue: () => void;
+  onStartOver: () => void;
 }
 
 export function TrainingProgressStage({
@@ -14,6 +15,7 @@ export function TrainingProgressStage({
   currentIteration,
   isComplete,
   onContinue,
+  onStartOver
 }: TrainingProgressProps) {
   const completedCount = steps.filter((s) => s.status === "complete").length;
   const activeIndex = steps.findIndex((s) => s.status === "active");
@@ -150,17 +152,23 @@ export function TrainingProgressStage({
       <footer className="px-6 py-4">
         {isComplete ? (
           <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="flex items-center gap-2">
+              <button
+              onClick={onStartOver}
+              className="flex items-center gap-2 pl-4 pr-5 py-2.5 rounded-xl text-primary font-mono text-[11px] font-semibold tracking-wide transition-all hover:bg-primary hover:text-primary-foreground hover:border-primary active:scale-[0.97]"
+            >
+              Reset project
+            </button>
             <p className="font-mono text-[11px] text-muted-foreground/70">
               Ready to annotate words
             </p>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={onContinue}
-                className="flex items-center gap-2 pl-4 pr-5 py-2.5 rounded-xl bg-primary/10 border border-primary/30 text-primary font-mono text-[11px] font-semibold tracking-wide transition-all hover:bg-primary hover:text-primary-foreground hover:border-primary active:scale-[0.97]"
-              >
-                <span>Continue to Results</span>
-                <ArrowIcon />
-              </button>
+            <button
+              onClick={onContinue}
+              className="flex items-center gap-2 pl-4 pr-5 py-2.5 rounded-xl bg-primary/10 border border-primary/30 text-primary font-mono text-[11px] font-semibold tracking-wide transition-all hover:bg-primary hover:text-primary-foreground hover:border-primary active:scale-[0.97]"
+            >
+              <span>Continue to Results</span>
+              <ArrowIcon />
+            </button>
             </div>
           </div>
         ) : (
