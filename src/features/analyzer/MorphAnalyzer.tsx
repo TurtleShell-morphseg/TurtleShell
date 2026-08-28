@@ -393,6 +393,8 @@ function StageRenderer({ ts }: { ts: UseTurtleshellReturn }) {
           currentIteration={ts.currentIteration}
           isComplete={ts.isTrainingComplete}
           onContinue={() => ts.goToStage("results")}
+          onStartOver={ts.handleStartOver}
+
         />
       );
     case "annotation":
