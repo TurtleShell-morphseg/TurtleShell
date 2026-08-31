@@ -102,18 +102,16 @@ export function useTurtleshell(): UseTurtleshellReturn {
   const currentStageRef = useRef<WorkflowStage>("config");
 
   const handleLanguageChange = useCallback((lang: string) => {
-    setLanguageState(lang);
-    if (typeof window !== 'undefined') {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (window as any).language = lang;
-    }
-    // Only push to the worker (which sets window.language and the VFS path
-    // prefix) once the user has left the config stage. While they are still
-    // typing the language name we must not create /data/<partial>/ dirs.
-    if (currentStageRef.current !== "config") {
-      setLanguage(lang);
-    }
-  }, []);
+      setLanguageState(lang);
+      setModelConfigLocal((prev) => ({ ...prev, targetLanguage: lang }));
+      modelConfigRef.current = { ...modelConfigRef.current, targetLanguage: lang };
+      if (typeof window !== 'undefined') {
+        (window as any).language = lang;
+      }
+      if (currentStageRef.current !== "config") {
+        setLanguage(lang);
+      }
+    }, []);
 
   const projectDB = useProjectDB();
   const [rolesMap, setRolesMap] = useState<Record<string, FileRole | null>>({});  
@@ -156,7 +154,8 @@ export function useTurtleshell(): UseTurtleshellReturn {
     if (leavingConfig) {
       // First time leaving config: flush the language to the worker and persist
       // the full model config + stage in one shot. Nothing was written before.
-      setLanguage((window as any).language ?? "");
+      const targetLang = modelConfigRef.current.targetLanguage || (window as any).language || "";
+      setLanguage(targetLang);
       projectDB.saveProjectMeta({ currentStage: stage, modelConfig: modelConfigRef.current });
     } else {
       projectDB.saveProjectMeta({ currentStage: stage });
@@ -175,6 +174,7 @@ export function useTurtleshell(): UseTurtleshellReturn {
   const setModelConfig = useCallback(
     (config: ModelConfig) => {
       setModelConfigLocal(config);
+      setLanguageState(config.targetLanguage);
       modelConfigRef.current = config;
       // Skip DB write while on the config stage — goToStage will do one bulk
       // flush when the user clicks "Upload Files".
@@ -653,6 +653,7 @@ export function useTurtleshell(): UseTurtleshellReturn {
           }
           if (meta?.modelConfig) {
             setModelConfigLocal(meta.modelConfig);
+            modelConfigRef.current = meta.modelConfig;
           }
           if (meta?.cumulativeSelectSize !== undefined) {
             cumulativeSelectSize.current = meta.cumulativeSelectSize;
