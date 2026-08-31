@@ -173,6 +173,12 @@ export function TrainingProgressStage({
           </div>
         ) : (
           <div className="flex items-center justify-between">
+            <button
+              onClick={onStartOver}
+              className="flex items-center gap-2 pl-4 pr-5 py-2.5 rounded-xl text-primary font-mono text-[11px] font-semibold tracking-wide transition-all hover:bg-primary hover:text-primary-foreground hover:border-primary active:scale-[0.97]"
+            >
+              Reset project
+            </button>
             <span className="font-mono text-[10px] text-muted-foreground/20">
               Waiting for training to finish
             </span>
